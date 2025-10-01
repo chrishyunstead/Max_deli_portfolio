@@ -42,25 +42,28 @@ import pandas as pd
 import os, time, io, requests
 
 
-BASE = "https://secure.holistics.io/api/v3"
+BASE = "https://secure.holistics.io/api/v2"
 API_KEY = os.environ["HOLISTICS_API_KEY"]
 HEADERS = {"X-Holistics-Key": API_KEY, "Content-Type": "application/json"}
 
 def run_report_get_csv_url(report_id: str, poll_sec: int = 5, timeout_sec: int = 900):
-    r = requests.post(f"{BASE}/report_jobs", headers=HEADERS, json={"report_id": report_id})
+    r = requests.post(f"{BASE}/report_jobs", headers=HEADERS, json={"report_id": int(report_id)})
     r.raise_for_status()
     job_id = r.json()["data"]["id"]
+    print(f"📌 Holistics job started: {job_id}")
     start = time.time()
+
     while True:
         jr = requests.get(f"{BASE}/report_jobs/{job_id}", headers=HEADERS)
         jr.raise_for_status()
-        status = jr.json()["data"]["status"]
-        if status == "completed":
-            return jr.json()["data"]["download_url"]
-        if status in ("failed", "error"):
-            raise RuntimeError(f"Holistics job {job_id} failed")
+        data = jr.json()["data"]
+        if data["status"] == "completed":
+            print("✅ Holistics job completed")
+            return data["download_url"]
+        if data["status"] in ("failed", "error"):
+            raise RuntimeError(f"Holistics job failed: {data}")
         if time.time() - start > timeout_sec:
-            raise TimeoutError(f"Holistics job {job_id} timeout")
+            raise TimeoutError(f"Holistics job timeout after {timeout_sec}s")
         time.sleep(poll_sec)
 
 def fetch_report_df(report_id: str) -> pd.DataFrame:
