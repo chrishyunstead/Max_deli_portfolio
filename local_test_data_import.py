@@ -58,7 +58,7 @@ class AutoContainerGeneration:
         # SSH 및 MySQL 설정
         ssh_host = os.getenv("SSH_HOST_VER_1")
         ssh_user = os.getenv("SSH_USER")
-        ssh_private_key = os.getenv("SSH_PRIVATE_KEY_PATH")
+        ssh_private_key = os.getenv("SSH_PRIVATE_KEY_PATH", "/tmp/ssh_key.pem")  # 경로 사용
         
 
         mysql_host = os.getenv("MYSQL_HOST")

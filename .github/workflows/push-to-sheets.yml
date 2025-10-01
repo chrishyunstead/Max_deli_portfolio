@@ -28,24 +28,23 @@ jobs:
       # ✅ SSH 개인키를 파일로 저장(SSHTunnelForwarder에 경로로 전달)
       - name: Write SSH key (for SSHTunnelForwarder)
         run: |
+          # 1) SSH 개인키 파일 생성
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ssh_key.pem
           chmod 600 /tmp/ssh_key.pem
-          # 호스트 키 고정(권장)
-          ssh-keyscan -H "${{ secrets.SSH_HOST_VER_1 }}" >> ~/.ssh/known_hosts
 
-      # ⛔️ 불필요: 당신의 파이썬 코드가 터널을 여므로 이 스텝은 제거
-      # - name: Setup SSH tunnel
-      #   ...
+          # 2) known_hosts 쓸 디렉터리 생성
+          mkdir -p ~/.ssh
+
+          # 3) 호스트 키 등록
+          ssh-keyscan -H "${{ secrets.SSH_HOST_VER_1 }}" >> ~/.ssh/known_hosts
 
       - name: Run app.py
         env:
-          # DB/SSH
+          SSH_PRIVATE_KEY_PATH: /tmp/ssh_key.pem
           SSH_HOST_VER_1: ${{ secrets.SSH_HOST_VER_1 }}
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PRIVATE_KEY_PATH: /tmp/ssh_key.pem   # 👈 경로를 넘깁니다
           MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-        run: |
-          python app.py
+        run: python app.py
