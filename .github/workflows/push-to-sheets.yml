@@ -27,7 +27,6 @@ jobs:
 
       # ✅ SSH 개인키를 파일로 저장(SSHTunnelForwarder에 경로로 전달)
       - name: Write SSH key (for SSHTunnelForwarder)
-        if: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ssh_key.pem
           chmod 600 /tmp/ssh_key.pem
