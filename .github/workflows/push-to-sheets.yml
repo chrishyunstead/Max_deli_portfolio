@@ -1,0 +1,51 @@
+name: run-app-push-to-sheets
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # UTC 01:00 = KST 10:00
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write Google SA key
+        run: |
+          echo "${{ secrets.JSON_KEY_PATH }}" > sa.json
+          chmod 600 sa.json
+
+      # (옵션) SSH 터널 필요 시
+      - name: Setup SSH tunnel
+        if: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.SSH_HOST_VER_1 }}" >> ~/.ssh/known_hosts
+          nohup ssh -fN \
+            -L 127.0.0.1:3306:${{ secrets.MYSQL_HOST }}:3306 \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_VER_1 }} &
+
+      - name: Run app.py
+        env:
+          SSH_HOST_VER_1: ${{ secrets.SSH_HOST_VER_1 }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: |
+          python app.py
