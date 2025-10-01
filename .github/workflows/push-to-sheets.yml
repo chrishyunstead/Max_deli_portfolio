@@ -28,15 +28,18 @@ jobs:
       # ✅ SSH 개인키를 파일로 저장(SSHTunnelForwarder에 경로로 전달)
       - name: Write SSH key (for SSHTunnelForwarder)
         run: |
-          # 1) SSH 개인키 파일 생성
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ssh_key.pem
+          # 1) SSH 개인키 파일 생성 (heredoc으로 줄바꿈 보존)
+          cat <<'EOF' > /tmp/ssh_key.pem
+      ${{ secrets.SSH_PRIVATE_KEY }}
+      EOF
           chmod 600 /tmp/ssh_key.pem
 
-          # 2) known_hosts 쓸 디렉터리 생성
+          # 2) known_hosts 디렉터리 준비
           mkdir -p ~/.ssh
 
-          # 3) 호스트 키 등록
-          ssh-keyscan -H "${{ secrets.SSH_HOST_VER_1 }}" >> ~/.ssh/known_hosts
+          # 3) 호스트 키 등록 (호스트가 사설망이면 실패할 수 있으니 non-fatal)
+          ssh-keyscan -T 5 -H "${{ secrets.SSH_HOST_VER_1 }}" >> ~/.ssh/known_hosts || echo "keyscan skipped"
+
 
       - name: Run app.py
         env:
