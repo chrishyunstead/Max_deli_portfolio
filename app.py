@@ -13,17 +13,18 @@ from preprocess_spread_sheet.push_spread_sheet import push_to_spreadsheet
 from datetime import datetime
 import pandas as pd
 # 로컬 테스트
-from local_test_data_import import AutoContainerGeneration
-model_proc = AutoContainerGeneration(version=2, debug=True)
+# from local_test_data_import import AutoContainerGeneration
+# model_proc = AutoContainerGeneration(version=2, debug=True)
 
-
+# from data_import_sheets import SheetDataLoader
+# loader = SheetDataLoader()
 # db_handler = DBHandler()
 # schedule_processor = ScheduleProcessor(db_handler)
 # shipping_processor = ShippingProcessor(db_handler)
 # model_processor = ModelProcessor(db_handler)
 # time_processor = TimeProcessor(db_handler)
 
-workflow_date = datetime.today().strftime("%Y-%m-%d")
+
 # workflow_date = '2025-09-28'  # 고정값 테스트
 
 # df_model = model_processor.fetch_model(workflow_date)
@@ -32,14 +33,64 @@ workflow_date = datetime.today().strftime("%Y-%m-%d")
 # predict_df = shipping_processor.fetch_shipping(workflow_date)
 
 # 로컬 테스트
-df_model, df_time, predict_df, df_schedule = model_proc.fetch_all_data()
+# df_model, df_time, predict_df, df_schedule = loader.fetch_all_data()
 # df_model.to_csv('df_model.csv', index=False)
 # df_time.to_csv('df_time.csv', index=False) 
 # predict_df = pd.read_csv('20250928_df.csv')
 # df_schedule = pd.read_csv('20250928_schedule.csv')
 
-day_str = datetime.strptime(workflow_date, "%Y-%m-%d").strftime('%A').lower()
+import os, time, io, requests
 
+
+BASE = "https://secure.holistics.io/api/v2"
+API_KEY = os.environ["HOLISTICS_API_KEY"]
+HEADERS = {"X-Holistics-Key": API_KEY, "Content-Type": "application/json"}
+
+def run_report_get_csv_url(report_id: str, poll_sec: int = 5, timeout_sec: int = 900):
+    r = requests.post(f"{BASE}/report_jobs", headers=HEADERS, json={"report_id": report_id})
+    r.raise_for_status()
+    job_id = r.json()["data"]["id"]
+    start = time.time()
+    while True:
+        jr = requests.get(f"{BASE}/report_jobs/{job_id}", headers=HEADERS)
+        jr.raise_for_status()
+        status = jr.json()["data"]["status"]
+        if status == "completed":
+            return jr.json()["data"]["download_url"]
+        if status in ("failed", "error"):
+            raise RuntimeError(f"Holistics job {job_id} failed")
+        if time.time() - start > timeout_sec:
+            raise TimeoutError(f"Holistics job {job_id} timeout")
+        time.sleep(poll_sec)
+
+def fetch_report_df(report_id: str) -> pd.DataFrame:
+    url = run_report_get_csv_url(report_id)
+    resp = requests.get(url, stream=True)
+    resp.raise_for_status()
+    buf = io.BytesIO(resp.content)
+    try:
+        return pd.read_csv(buf)
+    except:
+        buf.seek(0)
+        return pd.read_csv(buf, compression="gzip")
+
+def fetch_all_from_holistics():
+    report_ids = [s.strip() for s in os.environ["HOLISTICS_REPORT_IDS"].split(",")]
+    if len(report_ids) != 4:
+        raise RuntimeError(f"리포트 ID가 4개 필요합니다: {report_ids}")
+    print("➡️ Fetching 4 Holistics reports:", report_ids)
+
+    df_time    = fetch_report_df(report_ids[0])
+    df_model     = fetch_report_df(report_ids[1])
+    df_schedule  = fetch_report_df(report_ids[2])
+    predict_df = fetch_report_df(report_ids[3])
+
+    return df_time, df_model, df_schedule, predict_df
+
+workflow_date = datetime.today().strftime("%Y-%m-%d")
+
+day_str = datetime.strptime(workflow_date, "%Y-%m-%d").strftime('%A').lower()
+df_time, df_model, df_schedule, predict_df = fetch_all_from_holistics()
 # day 컬럼 추가
 predict_df['day'] = day_str
 

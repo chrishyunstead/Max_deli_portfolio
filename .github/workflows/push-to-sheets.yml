@@ -1,3 +1,4 @@
+# .github/workflows/push-to-sheets.yml
 name: run-app-push-to-sheets
 
 on:
@@ -8,6 +9,7 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -25,25 +27,15 @@ jobs:
           printf "%s" "${{ secrets.JSON_KEY_PATH }}" > sa.json
           chmod 600 sa.json
 
-      - name: Write SSH key (for SSHTunnelForwarder)
-        run: |
-          # 1) SSH 개인키 파일 생성 (heredoc 대신 printf로 개행/특수문자 보존)
-          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ssh_key.pem
-          chmod 600 /tmp/ssh_key.pem
-
-          # 2) known_hosts 디렉터리 준비
-          mkdir -p ~/.ssh
-
-          # 3) 호스트 키 등록 (사설망이면 실패해도 통과)
-          ssh-keyscan -T 5 -H "${{ secrets.SSH_HOST_VER_1 }}" >> ~/.ssh/known_hosts || echo "keyscan skipped"
-
       - name: Run app.py
         env:
-          SSH_PRIVATE_KEY_PATH: /tmp/ssh_key.pem
-          SSH_HOST_VER_1: ${{ secrets.SSH_HOST_VER_1 }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          PYTHONUNBUFFERED: "1"
+          HOLISTICS_API_KEY: ${{ secrets.HOLISTICS_API_KEY }}
+          HOLISTICS_REPORT_IDS: ${{ secrets.HOLISTICS_REPORT_IDS }}
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          WORKSHEET: ${{ secrets.WORKSHEET }}
+          TAB_MODEL: ${{ secrets.TAB_MODEL }}
+          TAB_TIME: ${{ secrets.TAB_TIME }}
+          TAB_PREDICT: ${{ secrets.TAB_PREDICT }}
+          TAB_SCHEDULE: ${{ secrets.TAB_SCHEDULE }}
         run: python app.py

@@ -46,31 +46,32 @@
 #     return print("✅ 구글 시트 업로드 완료!")
 
 
+# preprocess_spread_sheet/push_spread_sheet.py
 import os
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 
-def push_to_spreadsheet(merged_df):
+def push_to_spreadsheet(merged_df: pd.DataFrame):
     scopes = [
         "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive"
+        "https://www.googleapis.com/auth/drive",
     ]
-
-    # ✅ GitHub Actions에서 Secrets: JSON_KEY_PATH 로 저장했으므로 아래처럼 변경
-    with open("sa.json", "w") as f:
-        f.write(os.environ["JSON_KEY_PATH"])
-
     creds = Credentials.from_service_account_file("sa.json", scopes=scopes)
     gc = gspread.authorize(creds)
 
-    spreadsheet_url = "https://docs.google.com/spreadsheets/d/1ciVZdzU6GnlV8YZuo0frIOmsoaAdGngNLBgE4cDBjek/edit#gid=0"
-    doc = gc.open_by_url(spreadsheet_url)
-    sheet = doc.worksheet("max")
+    sheet_id = os.environ["SHEET_ID"]
+    target_tab = os.environ.get("WORKSHEET", "max")  # 기본값 max
 
-    sheet.clear()
+    ws = gc.open_by_key(sheet_id).worksheet(target_tab)
+
+    ws.clear()
+    if merged_df.empty:
+        print("결과가 비어 있어 시트만 초기화했습니다.")
+        return
+
+    # 대용량이면 청크 업로드로 바꿔도 됨(지금은 한 번에)
     values = [merged_df.columns.tolist()] + merged_df.values.tolist()
-    sheet.update('A1', values)
-
-    return print("✅ 구글 시트 업로드 완료!")
+    ws.update("A1", values, value_input_option="RAW")
+    return print(f"✅ 구글 시트 업로드 완료! {len(merged_df)} rows → {target_tab}")
 
