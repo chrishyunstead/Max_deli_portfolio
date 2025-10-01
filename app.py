@@ -42,7 +42,7 @@ import pandas as pd
 import os, time, io, requests
 
 
-BASE = "https://secure.holistics.io/api/v2"
+BASE = "https://secure.holistics.io/api/v3"
 API_KEY = os.environ["HOLISTICS_API_KEY"]
 HEADERS = {"X-Holistics-Key": API_KEY, "Content-Type": "application/json"}
 
