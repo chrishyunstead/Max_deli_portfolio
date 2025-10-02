@@ -76,8 +76,12 @@ def push_to_spreadsheet(merged_df: pd.DataFrame):
     if merged_df.empty:
         print(f"[{target_tab}] 결과가 비어 있어 시트만 초기화했습니다.")
         return
+    
+    print(f'merged_df.columns: {merged_df.columns}')
 
     values = [merged_df.columns.tolist()] + merged_df.values.tolist()
+
+    print(f'values: {values}')
     ws.update("A1", values, value_input_option="RAW")
     print(f"✅ 구글 시트 업로드 완료! {len(merged_df)} rows → {target_tab}")
 
