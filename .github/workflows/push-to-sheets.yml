@@ -29,13 +29,8 @@ jobs:
 
       - name: Run app.py
         env:
-          PYTHONUNBUFFERED: "1"
           HOLISTICS_API_KEY: ${{ secrets.HOLISTICS_API_KEY }}
-          HOLISTICS_REPORT_IDS: ${{ secrets.HOLISTICS_REPORT_IDS }}
+          HOLISTICS_WIDGET_IDS: ${{ secrets.HOLISTICS_WIDGET_IDS }}    # "656368,111111,222222,333333"
           SHEET_ID: ${{ secrets.SHEET_ID }}
-          WORKSHEET: ${{ secrets.WORKSHEET }}
-          TAB_MODEL: ${{ secrets.TAB_MODEL }}
-          TAB_TIME: ${{ secrets.TAB_TIME }}
-          TAB_PREDICT: ${{ secrets.TAB_PREDICT }}
-          TAB_SCHEDULE: ${{ secrets.TAB_SCHEDULE }}
+          WORKSHEET: max                                              # ✅ 시크릿 안 쓰고 리터럴
         run: python app.py

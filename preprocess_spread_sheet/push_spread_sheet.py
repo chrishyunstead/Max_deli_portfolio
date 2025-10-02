@@ -47,10 +47,12 @@
 
 
 # preprocess_spread_sheet/push_spread_sheet.py
+# preprocess_spread_sheet/push_spread_sheet.py
 import os
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+import gspread
 
 def push_to_spreadsheet(merged_df: pd.DataFrame):
     scopes = [
@@ -61,17 +63,21 @@ def push_to_spreadsheet(merged_df: pd.DataFrame):
     gc = gspread.authorize(creds)
 
     sheet_id = os.environ["SHEET_ID"]
-    target_tab = os.environ.get("WORKSHEET", "max")  # 기본값 max
+    target_tab = os.environ.get("WORKSHEET") or "max"   # ✅ 빈 문자열도 기본값 처리
 
-    ws = gc.open_by_key(sheet_id).worksheet(target_tab)
+    # 탭이 없으면 자동 생성(처음 배포 시 편함)
+    sh = gc.open_by_key(sheet_id)
+    try:
+        ws = sh.worksheet(target_tab)
+    except gspread.WorksheetNotFound:
+        ws = sh.add_worksheet(title=target_tab, rows="100", cols="26")
 
     ws.clear()
     if merged_df.empty:
-        print("결과가 비어 있어 시트만 초기화했습니다.")
+        print(f"[{target_tab}] 결과가 비어 있어 시트만 초기화했습니다.")
         return
 
-    # 대용량이면 청크 업로드로 바꿔도 됨(지금은 한 번에)
     values = [merged_df.columns.tolist()] + merged_df.values.tolist()
     ws.update("A1", values, value_input_option="RAW")
-    return print(f"✅ 구글 시트 업로드 완료! {len(merged_df)} rows → {target_tab}")
+    print(f"✅ 구글 시트 업로드 완료! {len(merged_df)} rows → {target_tab}")
 
