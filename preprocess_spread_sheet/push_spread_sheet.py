@@ -73,6 +73,11 @@ def push_to_spreadsheet(merged_df: pd.DataFrame):
         ws = sh.add_worksheet(title=target_tab, rows="100", cols="26")
 
     ws.clear()
+    ws.format('C:C', {'numberFormat': {'type': 'NUMBER', 'pattern': '0'}})
+    ws.format('D:D', {'numberFormat': {'type': 'NUMBER', 'pattern': '0.########'}})
+    ws.format('E:E', {'numberFormat': {'type': 'NUMBER', 'pattern': '0'}})
+    ws.format('F:F', {'numberFormat': {'type': 'NUMBER', 'pattern': '0'}})
+    
     if merged_df.empty:
         print(f"[{target_tab}] 결과가 비어 있어 시트만 초기화했습니다.")
         return
