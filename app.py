@@ -240,8 +240,13 @@ if __name__ == "__main__":
     # 4) available_delivery_time 전처리
     available_delivery_time_no_outlier_sector = process_available_delivery_time(df_time)
 
+    print(f'prediction_result: {prediction_result.head()}')
+    print(f'available_delivery_time_no_outlier_sector: {available_delivery_time_no_outlier_sector.head()}')
+    print(f'df_schedule: {df_schedule.head()}')
+    
     # 5) 병합
     merged_df = preprocess_predict(df_schedule, prediction_result, available_delivery_time_no_outlier_sector)
+    print(f'merged_df: {merged_df.head()}')
 
     # 6) 시트 업로드 (push_spread_sheet.py가 SHEET_ID/WORKSHEET를 읽음)
     push_to_spreadsheet(merged_df)

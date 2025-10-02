@@ -3,7 +3,7 @@ name: run-app-push-to-sheets
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # UTC 01:00 = KST 10:00
+    - cron: "0 2 * * *"   # UTC 02:00 = KST 11:00
   workflow_dispatch:
 
 jobs:
