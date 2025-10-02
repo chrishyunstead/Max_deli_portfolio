@@ -24,7 +24,7 @@ jobs:
 
       - name: Write Google SA key
         run: |
-          printf "%s" "${{ secrets.JSON_KEY_PATH }}" > sa.json
+          echo "${{ secrets.JSON_KEY_PATH }}" | base64 -d > sa.json
           chmod 600 sa.json
 
       - name: Run app.py
