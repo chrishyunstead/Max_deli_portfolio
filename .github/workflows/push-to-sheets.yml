@@ -32,5 +32,5 @@ jobs:
           HOLISTICS_API_KEY: ${{ secrets.HOLISTICS_API_KEY }}
           HOLISTICS_WIDGET_IDS: ${{ secrets.HOLISTICS_WIDGET_IDS }}    # "656368,111111,222222,333333"
           SHEET_ID: ${{ secrets.SHEET_ID }}
-          WORKSHEET: max                                              # ✅ 시크릿 안 쓰고 리터럴
+          WORKSHEET: max_data                                              # ✅ 시크릿 안 쓰고 리터럴
         run: python app.py

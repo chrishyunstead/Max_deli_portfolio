@@ -89,7 +89,7 @@ class AutoContainerGeneration:
             AND ls.code NOT IN ('취소')
             AND TIME(DATE_ADD(ss.timestamp_delivery_complete, INTERVAL 9 HOUR)) BETWEEN '17:00:00' AND '23:59:59'
             AND TIME(DATE_ADD(ss.timestamp_outfordelivery, INTERVAL 9 HOUR)) BETWEEN '17:00:00' AND '21:00:00'
-            AND DATE(DATE_ADD(ss.timestamp_outfordelivery, INTERVAL 9 HOUR)) BETWEEN DATE_SUB(CURDATE(), INTERVAL 45 DAY) AND CURDATE()
+            AND DATE(DATE_ADD(ss.timestamp_outfordelivery, INTERVAL 9 HOUR)) BETWEEN DATE_SUB(CURDATE(), INTERVAL 90 DAY) AND CURDATE()
         ),
         agg AS (
             SELECT
@@ -137,8 +137,7 @@ class AutoContainerGeneration:
             AND a.time_per_delivery <= '00:20:00'
             AND a.user_id <> 464
         ORDER BY
-            a.Area, a.Date
-        limit 15000;
+            a.Area, a.Date;
         """
 
         time_query = """
@@ -168,7 +167,7 @@ class AutoContainerGeneration:
                         BETWEEN '17:00:00' AND '21:00:00'
                 -- 최근 30일
                 AND DATE(DATE_ADD(ss.timestamp_outfordelivery, INTERVAL 9 HOUR))
-                        BETWEEN DATE_SUB(CURDATE(), INTERVAL 45 DAY) AND CURDATE()
+                        BETWEEN DATE_SUB(CURDATE(), INTERVAL 90 DAY) AND CURDATE()
             ),
             agg AS (
                 SELECT
@@ -213,8 +212,7 @@ class AutoContainerGeneration:
                 AND a.deliveries >= 15
                 AND a.deliveries < 70
             ORDER BY
-                a.date, available_delivery_time, a.area
-            limit 15000;
+                a.date, available_delivery_time, a.area;
             """
 
         shipping_query = """
