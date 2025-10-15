@@ -43,8 +43,8 @@ def preprocess_predict(df_schedule, prediction_result, available_delivery_time_n
             print(f'[avail] BLUE 지역 제외: {avail}')
 
         merged = pred.merge(
-            avail[['Area', 'day', 'available_delivery_time']],
-            on=['Area', 'day'], how='left'
+            avail[['Area', 'available_delivery_time']],
+            on=['Area'], how='left'
         )
         
         merged['available_delivery_time'] = pd.to_numeric(

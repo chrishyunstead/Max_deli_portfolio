@@ -233,6 +233,8 @@ if __name__ == "__main__":
     df_model, df_time, predict_df, df_schedule = fetch_all_from_holistics()
     # 2) predict_df에 day 컬럼 세팅(있으면 덮어씀)
     predict_df["day"] = day_str
+    print(f'df_model: {df_model.head()}')
+    print(f'df_time: {df_time.head()}')
 
     # 3) LightGBM 예측
     prediction_result = process_lgbm(df_model=df_model, predict_df=predict_df)
