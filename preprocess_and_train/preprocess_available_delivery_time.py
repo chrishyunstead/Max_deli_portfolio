@@ -29,6 +29,6 @@ def process_available_delivery_time(df_time):
 
     available_delivery_time_no_outlier = pd.concat(filtered_available_dfs, ignore_index=True)
     
-    available_delivery_time_no_outlier_sector=available_delivery_time_no_outlier.groupby('area')['available_delivery_time'].mean().reset_index()
+    available_delivery_time_no_outlier_sector=available_delivery_time_no_outlier.groupby(['area', 'day'])['available_delivery_time'].mean().reset_index()
 
     return available_delivery_time_no_outlier_sector
