@@ -34,3 +34,11 @@ jobs:
           SHEET_ID: ${{ secrets.SHEET_ID }}
           WORKSHEET: max_data                                              # ✅ 시크릿 안 쓰고 리터럴
         run: python app.py
+
+      - name: Upload merged_df artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged_df-${{ github.run_id }}
+          path: artifacts/**/merged_df.csv
+          if-no-files-found: warn
+          retention-days: 30

@@ -127,6 +127,7 @@
 # app.py
 import os, io, time, sys, requests
 import pandas as pd
+from datetime import datetime, timedelta
 
 # === 콘솔 인코딩 (윈도우/액션스 안전) ===
 if hasattr(sys.stdout, "reconfigure"):
@@ -253,3 +254,20 @@ if __name__ == "__main__":
     # 6) 시트 업로드 (push_spread_sheet.py가 SHEET_ID/WORKSHEET를 읽음)
     push_to_spreadsheet(merged_df)
     print(f"✅ 스프레드시트 업로드 완료! rows={len(merged_df)}")
+
+    # === save merged_df as CSV (per-run folder) ===
+
+    def _save_csv(df, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        df.to_csv(path, index=False)
+
+    # KST timestamp + run id
+    now_kst = datetime.utcnow() + timedelta(hours=9)
+    stamp = now_kst.strftime("%Y%m%d_%H%M%S")
+    run_id = os.environ.get("GITHUB_RUN_ID", "local")
+
+    out_dir = os.path.join("artifacts", f"{stamp}_{run_id}")
+    _save_csv(merged_df, os.path.join(out_dir, "merged_df.csv"))
+
+    print(f"📁 saved: {os.path.join(out_dir, 'merged_df.csv')}")
+
