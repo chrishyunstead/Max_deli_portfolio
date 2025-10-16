@@ -10,6 +10,10 @@ def process_available_delivery_time(df_time):
 
     available_delivery_time_cleaned = df_time.drop(index=duplicated_pairs_available_delivery_time).reset_index(drop=True)
 
+    available_delivery_time_cleaned['available_delivery_time'] = pd.to_numeric(
+        available_delivery_time_cleaned['available_delivery_time'], errors='coerce'
+    )
+
     # 섹터 끼리의 이상치 제거
     available_delivery_time_cleaned_sector = available_delivery_time_cleaned['area'].unique()
 
@@ -29,6 +33,15 @@ def process_available_delivery_time(df_time):
 
     available_delivery_time_no_outlier = pd.concat(filtered_available_dfs, ignore_index=True)
     
-    available_delivery_time_no_outlier_sector=available_delivery_time_no_outlier.groupby('area')['available_delivery_time'].mean().reset_index()
+    # 평균치
+    # available_delivery_time_no_outlier_sector=available_delivery_time_no_outlier.groupby('area')['available_delivery_time'].mean().reset_index()
+
+    # 데이터 편향이 있을 수 있으므로 중간값으로
+    available_delivery_time_no_outlier_sector = (
+        available_delivery_time_no_outlier
+        .groupby(['area', 'day'])['available_delivery_time']
+        .median()
+        .reset_index()
+    )
 
     return available_delivery_time_no_outlier_sector

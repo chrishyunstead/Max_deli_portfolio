@@ -31,6 +31,13 @@ def preprocess_predict(df_schedule, prediction_result, available_delivery_time_n
                 avail['available_delivery_time'], errors='coerce'
             )
 
+        # ★ day 키 정규화(소문자) - 예측/가용 모두 동일하게
+        if 'day' in pred.columns:
+            pred['day'] = pred['day'].str.lower()
+        if 'day' in avail.columns:
+            avail['day'] = avail['day'].str.lower()
+
+
         has_schedule = isinstance(df_schedule, pd.DataFrame) and (not df_schedule.empty)
 
         if has_schedule:
@@ -43,8 +50,8 @@ def preprocess_predict(df_schedule, prediction_result, available_delivery_time_n
             print(f'[avail] BLUE 지역 제외: {avail}')
 
         merged = pred.merge(
-            avail[['Area', 'available_delivery_time']],
-            on=['Area'], how='left'
+            avail[['Area', 'day', 'available_delivery_time']],
+            on=['Area', 'day'], how='left'
         )
         
         merged['available_delivery_time'] = pd.to_numeric(
