@@ -4,12 +4,14 @@
 Holistics BI → 모델 학습/예측 → 가용시간 결합 → 기사 타입별 용량 계산 → Google Sheets 업데이트까지
 완전 자동화된 일일 운영 파이프라인을 제공합니다.
 
-전체 파이프라인은 GitHub Actions 스케줄링과 Google Sheets API 기반으로 실행됩니다.
+전체 파이프라인은 GitHub Actions Workflow Google Sheets API 기반으로 실행됩니다.
 
 ## 아키텍처 개요
 
 ```text
-GitHub Actions (Scheduler)
+cron-job (외부 API)
+↓
+GitHub Actions Workflow
 ↓
 데이터 로딩 (Holistics BI)
 
@@ -21,7 +23,7 @@ GitHub Actions (Scheduler)
 
 기사 스케줄 데이터
 ↓
-RandomForestRegressor 학습
+LightGBM 학습
 ↓
 오늘 물량 → 총 소요시간 예측
 ↓
@@ -41,7 +43,7 @@ Google Sheets 자동 업데이트
 ├─ app.py # 전체 파이프라인 실행 진입점
 ├─ sheet_data_loader.py # Holistics BI → 데이터 로딩
 ├─ available_time_processing.py # 가용시간 전처리(IQR 제거, median 집계)
-├─ prediction.py # RandomForest 학습 및 예측
+├─ prediction.py # LightGBM 학습 및 예측
 ├─ preprocess_predict.py # 가용시간 × 예측결과 × 스케줄 → MAX 산출
 ├─ google_sheet_api.py # Google Sheets 업로드 모듈
 └─ config.py # 시트명 및 프로젝트 상수 설정
@@ -61,7 +63,7 @@ Google Sheets 자동 업데이트
 타깃:
 • deliveries_time
 
-RandomForestRegressor 학습
+LightGBM 학습
 
 예측:
 • predicted_deliveries_time
@@ -99,7 +101,7 @@ S01 2 O 412 90 3.41 26
 ## 기술 스택
 
 ```text
-Python : pandas, numpy, scikit-learn
+Python : pandas, numpy, scikit-learn, lightgbm
 Data Source : Holistics BI API
 Output : Google Sheets API
 Scheduler : GitHub Actions
