@@ -2,4 +2,4 @@ venv
 .env
 max-delivery-key.json
 test.ipynb
-sa.json.b64
+sa.json
