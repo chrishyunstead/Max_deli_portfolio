@@ -104,5 +104,5 @@ S01 2 O 412 90 3.41 26
 Python : pandas, numpy, scikit-learn, lightgbm
 Data Source : Holistics BI API
 Output : Google Sheets API
-Scheduler : GitHub Actions
+Scheduler : Cron-Job, GitHub Actions
 ```
