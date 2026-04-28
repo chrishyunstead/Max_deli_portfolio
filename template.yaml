@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  TF Team-max-delivery
+
+Globals:
+  Function:
+    Timeout: 900
+    MemorySize: 10240
+    Tracing: Active
+
+Parameters:
+  AccountEnv:
+    Type: String
+    Description: Deployment environment (local, beta, prod)
+    Default: prod
+    
+Resources:
+  MLMaxDeliveryFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+        DockerTag: MLMaxDeliveryFunction-v1.0
+        DockerContext: ./
+        Dockerfile: Dockerfile
+    Properties:
+      PackageType: Image
+      FunctionName: ml-max-delivery
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - AmazonSSMReadOnlyAccess
+      Environment:
+        Variables:
+          ACCOUNT_ENV: !Ref AccountEnv
+          SHEET_ID: '1ciVZdzU6GnlV8YZuo0frIOmsoaAdGngNLBgE4cDBjek'
+          WORKSHEET: 'max_data'
+          SAMPLE_N: '20'
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/PushOps/SG}}'
+        SubnetIds:
+          - '{{resolve:ssm:/PushOps/PrivateSubnet3}}'
+          - '{{resolve:ssm:/PushOps/PrivateSubnet4}}'
+      Events:
+        MLMaxDeliverySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(10 3 * * ? *)
+            Name: ml-max-delivery-daily-1210-kst
+            Description: Run ML max-delivery every day at 12:10 KST
