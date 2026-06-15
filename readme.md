@@ -1,90 +1,90 @@
 # Delivus Delivery MAX Predictor
 
-## 물량·지역·요일 기반 지역별 최대 배송량(MAX) 예측 Production MLOps 시스템
+> Korean version: [README_Kver.md](./README_Kver.md)
 
-> 회사 DB의 운영 데이터를 기반으로 물량·지역·요일별 총 배송 소요시간을 예측하고,  
-> 기사 스케줄과 지역별 가용시간을 결합하여 **운영 가능한 최대 배송량(MAX)** 을 자동 산출하는 시스템입니다.  
-> 산출된 MAX 값은 클러스터링 Lambda의 입력값으로 활용되어 기사별 과·소배차를 줄이고, 당일배송 SLA 안정성을 높이는 데 사용됩니다.
+## Production MLOps System for Predicting Regional Delivery Capacity
+
+This project is a production-oriented MLOps system that predicts the total delivery time by **volume, region, and weekday**, then combines the prediction with driver schedules and regional available working hours to calculate the operationally feasible **maximum delivery capacity (MAX)**.
+
+The generated MAX values are used as upstream inputs for the **Postal Code Clustering Lambda**, helping reduce over-assignment and under-assignment per driver while improving same-day delivery SLA stability.
 
 ---
 
 ## Executive Impact
 
-- **운영 의사결정 자동화**  
-  경험 기반으로 판단하던 기사별 최대 배송량 산정을 데이터 기반 자동화 체계로 전환
+- **Automated operational decision-making**  
+  Converted driver capacity estimation from experience-based manual judgment into a data-driven automated process.
 
-- **SLA 안정성 향상**  
-  예측 MAX 기반 배차로 전체 배송 권역 SLA가 **97.15% → 97.93%** 로 약 **0.78% 개선**
+- **Improved SLA stability**  
+  By using predicted MAX values for dispatch planning, the overall delivery-area SLA improved from **97.15% to 97.93%**.
 
-- **클러스터링 품질 개선**  
-  Postalcode Clustering Lambda 실행 전 최신 MAX 값을 자동 공급하여 기사별 물량 균형 개선
+- **Improved clustering quality**  
+  Automatically supplied the latest MAX values before the Postal Code Clustering Lambda runs, improving delivery volume balance across drivers.
 
-- **일일 자동 운영 파이프라인 구축**  
-  AWS Lambda + EventBridge 기반으로 매일 자동 실행되며, 결과는 Google Sheets에 자동 업데이트
+- **Built a daily automated production pipeline**  
+  Implemented a daily scheduled pipeline using **AWS Lambda + EventBridge**, with results automatically updated to Google Sheets.
 
-- **DB 직결 기반 안정적 운영**  
-  외부 BI 도구 의존 없이 회사 DB에서 직접 데이터 로딩 → 학습 → 추론 → 결과 반영까지 수행
-
----
-
-## 비즈니스 문제 (Business Problem)
-
-당일배송 운영에서는 기사별로 “하루에 몇 개까지 배송 가능한가”를 정확히 판단하는 것이 중요합니다.
-
-MAX 값이 과도하게 높으면 특정 기사에게 물량이 몰려 배송 지연이 발생하고,  
-반대로 낮게 잡히면 기사 리소스를 충분히 활용하지 못해 운영 효율이 떨어집니다.
-
-기존 방식의 한계는 다음과 같았습니다.
-
-- 운영자의 경험 기반 MAX 산정
-- 지역별 배송 난이도 차이 반영 어려움
-- 요일별 물량 패턴 반영 부족
-- 고정 기사 / FLEX 기사별 처리 가능량 구분 필요
-- 클러스터링 직전 최신 기준값 반영 어려움
-- 과배차·저배차로 인한 SLA 변동성 발생
-
-따라서 MAX 산정은 단순 참고 지표가 아니라,  
-**배송 클러스터링 품질과 SLA 안정성을 결정하는 핵심 운영 파라미터**였습니다.
+- **Stable DB-connected operation**  
+  Built a direct database pipeline that loads data from the company DB, performs training/inference, and reflects the results without relying on external BI tools.
 
 ---
 
-## 서비스 기능 (Service Features)
+## Business Problem
 
-Delivery MAX Predictor는 다음 기능을 수행합니다.
+In same-day delivery operations, accurately estimating how many orders each driver can handle in a day is a critical operational decision.
 
-- 회사 DB의 과거 배송 운영 데이터를 기반으로 총 배송 소요시간 예측
-- 지역·요일·물량·기사 스케줄을 반영한 MAX 산출
-- 지역별 가용시간과 예측 배송시간을 결합한 운영 가능 물량 계산
-- 고정 기사 / FLEX 기사별 MAX 값 자동 분배
-- AWS Lambda Image + EventBridge 기반 일일 자동 실행
-- 최종 결과를 Google Sheets에 자동 업데이트
-- 산출된 MAX 값을 Postalcode Clustering Lambda의 입력 데이터로 활용
+If the MAX value is too high, too many deliveries may be assigned to a driver, causing delays.  
+If the MAX value is too low, driver resources are underutilized, reducing operational efficiency.
 
----
+The existing process had several limitations:
 
-## 내가 수행한 역할 (My Role)
+- MAX values were estimated manually based on operator experience.
+- Regional delivery difficulty was hard to quantify.
+- Weekday-specific demand and productivity patterns were not fully reflected.
+- Fixed drivers and FLEX drivers required different capacity assumptions.
+- The latest operational conditions were difficult to reflect immediately before clustering.
+- Over-assignment and under-assignment caused SLA volatility.
 
-본 프로젝트에서 데이터 로딩부터 모델 학습, 추론, 운영 반영까지 End-to-End로 구현했습니다.
-
-- Lambda VPC 설정을 통한 회사 DB 직접 연동 구조 구성
-- 학습·추론용 운영 데이터셋 설계 및 전처리
-- 지역·요일·물량 기반 총 배송 소요시간 예측 모델 개발
-- **LightGBM 기반 예측 파이프라인 구현**
-- 예측값과 기사 가용시간을 결합한 MAX 산출 로직 설계
-- 기사 스케줄 기반 고정/FLEX 기사별 MAX 분배 로직 구현
-- AWS SAM Image 기반 Lambda 배포
-- EventBridge 스케줄러를 통한 일일 자동 실행 구성
-- Google Sheets API 연동으로 운영팀 사용 화면 자동 업데이트
-- 산출 결과를 클러스터링 시스템의 upstream 데이터로 연결
+Therefore, MAX was not just a reference metric. It was a key operational parameter that directly affected **delivery clustering quality and SLA stability**.
 
 ---
 
-## 핵심 구현 프로세스 (Core Process)
+## Service Features
 
-### 1. DB 직접 연동
+Delivery MAX Predictor performs the following tasks:
 
-Lambda `template.yaml`에 VPC Subnet / Security Group 설정을 적용하여  
-회사 내부 DB에 직접 접근할 수 있도록 구성했습니다.
+- Predicts total delivery time using historical delivery operation data from the company DB.
+- Calculates MAX values based on region, weekday, delivery volume, and driver schedules.
+- Combines predicted delivery time with regional available working hours.
+- Automatically distributes MAX values between fixed drivers and FLEX drivers.
+- Runs daily through **AWS Lambda Image + EventBridge**.
+- Updates final output to **Google Sheets** automatically.
+- Provides the generated MAX values as input data for the Postal Code Clustering Lambda.
+
+---
+
+## My Role
+
+I implemented the project end-to-end, from data loading and model development to inference, deployment, and operational integration.
+
+- Configured direct access to the company DB through Lambda VPC settings.
+- Designed and preprocessed datasets for training and inference.
+- Developed a model to predict total delivery time based on region, weekday, and volume.
+- Implemented a **LightGBM-based prediction pipeline**.
+- Designed MAX calculation logic by combining model predictions with driver availability.
+- Implemented driver-schedule-based MAX distribution logic for fixed and FLEX drivers.
+- Deployed the system using **AWS SAM Image-based Lambda**.
+- Configured daily automated execution with **EventBridge Scheduler**.
+- Integrated the output with **Google Sheets API** for the operations team.
+- Connected the generated results to the downstream clustering system.
+
+---
+
+## Core Process
+
+### 1. Direct DB Integration
+
+The Lambda function was configured with VPC Subnet and Security Group settings in `template.yaml` to directly access the internal company database.
 
 ```text
 AWS Lambda
@@ -93,70 +93,63 @@ AWS Lambda
   → Historical Operation Data Load
 ```
 
-이를 통해 별도 파일 업로드나 BI 도구를 거치지 않고,  
-실제 운영 데이터를 기반으로 학습과 추론이 수행되도록 만들었습니다.
+This allowed the system to perform training and inference using real operational data without manual file uploads or dependency on external BI tools.
 
 ---
 
-### 2. 데이터 전처리 및 학습
+### 2. Data Preprocessing and Training
 
-회사 DB에서 배송 완료 이력, 지역, 요일, 기사 스케줄, 물량 데이터를 조회한 뒤  
-모델 학습에 필요한 형태로 전처리합니다.
+The pipeline loads completed delivery history, region information, weekday data, driver schedules, and delivery volume from the company DB, then preprocesses the data into a model-ready format.
 
-주요 피처 예시는 다음과 같습니다.
+Example features:
 
 | Feature | Description |
 |---|---|
-| 지역 | 배송 권역 / Area |
-| 요일 | weekday 기반 물량·생산성 패턴 |
-| 물량 | 지역별 배송 아이템 수 |
-| 기사 스케줄 | 고정 기사 / FLEX 기사 가용 여부 |
-| 총 배송 소요시간 | 모델이 예측할 target |
+| Region | Delivery area or operational region |
+| Weekday | Weekday-based volume and productivity pattern |
+| Volume | Number of delivery items by region |
+| Driver Schedule | Fixed driver / FLEX driver availability |
+| Total Delivery Time | Target value predicted by the model |
 
-모델은 **LightGBM** 기반으로 구성하여  
-지역·요일·물량 조건에 따른 총 배송 소요시간을 예측합니다.
+The model uses **LightGBM** to predict total delivery time under different regional, weekday, and volume conditions.
 
 ---
 
-### 3. 추론 및 가용시간 결합
+### 3. Inference and Availability Adjustment
 
-당일 물량과 지역별 조건을 입력으로 추론을 수행한 뒤,  
-예측된 총 배송 소요시간을 기사 가용시간과 결합합니다.
+The system performs inference using same-day delivery volume and regional conditions, then combines the predicted total delivery time with driver availability.
 
 ```text
-예측 총 배송 소요시간
-+ 지역별 가용시간
-+ 기사 스케줄
-+ 운영 조건
-= 지역별 운영 가능 MAX
+Predicted Total Delivery Time
++ Regional Available Time
++ Driver Schedule
++ Operational Rules
+= Regional Operational MAX
 ```
 
-이 과정에서 단순 모델 예측값만 사용하는 것이 아니라,  
-실제 운영 가능한 시간과 기사 스케줄을 함께 고려해 결과를 보정합니다.
+Instead of using the raw model prediction alone, the system adjusts the result based on actual working time and driver schedules.
 
 ---
 
-### 4. MAX 계산
+### 4. MAX Calculation
 
-예측된 총 소요시간과 기사 스케줄을 바탕으로  
-기사 타입별 최대 배송 가능량을 계산합니다.
+Based on the predicted total delivery time and driver schedules, the system calculates maximum deliverable volume by driver type.
 
 ```text
-지역별 총 물량
-→ 예측 배송 소요시간
-→ 기사 가용시간 대비 처리 가능량 계산
-→ 고정 기사 / FLEX 기사별 MAX 분배
-→ 최종 MAX 산출
+Regional Total Volume
+→ Predicted Delivery Time
+→ Capacity Calculation Based on Available Driver Time
+→ MAX Distribution for Fixed / FLEX Drivers
+→ Final MAX Output
 ```
 
-최종 산출값은 클러스터링 시스템에서 기사별 물량 제한 기준으로 사용됩니다.
+The final output is used as the volume constraint for each driver in the clustering system.
 
 ---
 
-### 5. 운영 자동화
+### 5. Production Automation
 
-본 시스템은 단발성 분석 스크립트가 아니라,  
-매일 자동 실행되는 운영 파이프라인으로 구성했습니다.
+This project was built as a daily production pipeline, not a one-off analysis script.
 
 ```text
 EventBridge Scheduler
@@ -169,26 +162,24 @@ Model Inference / MAX Calculation
         ↓
 Google Sheets Update
         ↓
-Postalcode Clustering Lambda에서 최신 MAX 활용
+Postal Code Clustering Lambda Uses Latest MAX
 ```
 
-EventBridge를 통해 매일 클러스터링 실행 전 자동으로 동작하도록 구성하여,  
-운영팀이 매번 수동으로 기준값을 계산하지 않아도 되도록 만들었습니다.
+EventBridge triggers the pipeline every day before the clustering system runs, removing the need for operators to manually calculate 기준 values.
 
 ---
 
-### 6. 결과 반영
+### 6. Operational Output
 
-최종 MAX 값은 Google Sheets에 자동 업데이트됩니다.
+The final MAX values are automatically updated to Google Sheets.
 
-운영팀은 별도 쿼리나 파일 가공 없이,  
-클러스터링 직전 최신 MAX 기준값을 시트에서 바로 확인하고 활용할 수 있습니다.
+The operations team can use the latest MAX values immediately before clustering without writing queries or manually processing files.
 
-![MAX 산출 결과 Google Sheets 반영](./docs/images/image1.png)
+![MAX Calculation Result in Google Sheets](./docs/images/image1.png)
 
 ---
 
-## 시스템 아키텍처 (Architecture)
+## System Architecture
 
 ```text
 EventBridge Scheduler
@@ -207,12 +198,12 @@ MAX Capacity Calculation
         ↓
 Google Sheets API Update
         ↓
-Postalcode Clustering Lambda Input
+Postal Code Clustering Lambda Input
 ```
 
 ---
 
-## 기술 스택 (Tech Stack)
+## Tech Stack
 
 - **Python**
 - Pandas / NumPy
@@ -228,66 +219,65 @@ Postalcode Clustering Lambda Input
 
 ---
 
-## 운영 결과 화면 (Operational Output)
+## Operational Output
 
-MAX Predictor는 산출 결과를 Google Sheets에 자동 반영합니다.
+MAX Predictor automatically reflects the calculated results in Google Sheets.
 
-이 시트는 운영팀이 클러스터링 직전 확인하는 기준 데이터로 활용되며,  
-지역별 / 요일별 / 기사 타입별 MAX 값이 자동으로 업데이트됩니다.
+This sheet is used by the operations team as reference data before clustering, and regional, weekday, and driver-type MAX values are updated automatically.
 
 ![MAX Shipping Result](./docs/images/image1.png)
 
 ---
 
-## 클러스터링 시스템과의 연결 구조
+## Integration with the Clustering System
 
-Delivery MAX Predictor는 Postalcode Clustering Lambda의 upstream 시스템입니다.
+Delivery MAX Predictor is an upstream system for the Postal Code Clustering Lambda.
 
 ```text
 Delivery MAX Predictor
         ↓
-지역별 / 기사별 MAX 산출
+Regional / Driver-level MAX Calculation
         ↓
-Google Sheets 업데이트
+Google Sheets Update
         ↓
-Postalcode Clustering Lambda에서 MAX 로딩
+Postal Code Clustering Lambda Loads MAX Values
         ↓
-기사별 클러스터 물량 제한에 반영
+Driver-level Cluster Volume Constraints
         ↓
-허브앱 클러스터링 결과 생성
+Hub Admin App Clustering Result
 ```
 
-즉, MAX Predictor는 단독 모델이 아니라  
-실제 클러스터링 품질을 결정하는 핵심 입력값 생성 시스템입니다.
+In other words, MAX Predictor is not just a standalone model.  
+It generates the key input values that determine the quality of the production clustering system.
 
 ---
 
-## 성과 지표 (Measured Results)
+## Measured Results
 
-| 지표 | 개선 전 | 개선 후 | 효과 |
-|---|---:|---:|---:|
-| MAX 산정 방식 | 경험 기반 수동 판단 | ML 기반 자동 산출 | 운영 의사결정 자동화 |
-| SLA | 97.15% | 97.93% | +0.78% 개선 |
-| 기준값 반영 | 수동 업데이트 | 매일 자동 업데이트 | 최신성 확보 |
-| 클러스터링 입력값 | 고정/경험값 의존 | 예측 기반 MAX | 물량 균형 개선 |
-| 운영팀 작업 | 수작업 계산·확인 | Google Sheets 자동 반영 | 업무 부담 감소 |
+| Metric | Before | After | Impact |
+|---|---:|---:|---|
+| MAX Estimation | Manual, experience-based judgment | ML-based automated calculation | Automated operational decision-making |
+| SLA | 97.15% | 97.93% | +0.78% improvement |
+| Reference Data Update | Manual update | Daily automated update | Improved data freshness |
+| Clustering Input | Static / experience-based values | Prediction-based MAX | Improved volume balance |
+| Operations Team Workload | Manual calculation and review | Google Sheets auto-update | Reduced operational burden |
 
 ---
 
-## 왜 이 프로젝트가 강한 MLOps 경험인가?
+## Why This Is a Strong MLOps Project
 
-이 프로젝트는 단순히 모델을 학습한 것이 아니라,  
-**운영 의사결정에 사용되는 핵심 지표를 ML 시스템으로 자동 생성하고 Production 환경에서 매일 실행되도록 만든 사례**입니다.
+This project is not just about training a model.  
+It is a production MLOps case where a core operational decision metric is generated automatically by an ML system and executed daily in a real operational environment.
 
-### MLOps 관점에서의 핵심 역량
+### Key MLOps Capabilities Demonstrated
 
-- 회사 DB 직접 연동 기반 데이터 파이프라인 구축
-- Feature Engineering → Training → Batch Inference 자동화
-- AWS Lambda 기반 서버리스 운영 시스템 구축
-- EventBridge를 통한 주기적 실행 자동화
-- Google Sheets를 통한 운영팀 사용 화면 연동
-- Downstream 클러스터링 시스템과 연결
-- KPI 기반 성과 측정 및 운영 개선
+- Built a DB-connected data pipeline using company operation data.
+- Automated Feature Engineering → Training → Batch Inference.
+- Built a serverless production system on AWS Lambda.
+- Scheduled daily execution through EventBridge.
+- Integrated Google Sheets as an operations-facing output interface.
+- Connected the result to a downstream clustering system.
+- Measured performance through operational KPIs.
 
 ---
 
@@ -296,6 +286,7 @@ Postalcode Clustering Lambda에서 MAX 로딩
 ```text
 Max_deli_portfolio/
 ├── README.md
+├── README_Kver.md
 ├── template.yaml
 ├── Dockerfile
 ├── app.py
@@ -312,12 +303,12 @@ Max_deli_portfolio/
         └── image1.png
 ```
 
-> 실제 파일 구조에 따라 세부 디렉토리명은 조정될 수 있습니다.
+> The detailed directory structure may vary depending on the actual repository layout.
 
 ---
 
 ## Key Takeaway
 
-> 운영팀이 경험적으로 판단하던 기사별 최대 배송량(MAX)을  
-> 머신러닝 예측 모델과 AWS 자동화 파이프라인으로 전환하여,  
-> 실제 SLA 개선과 클러스터링 품질 향상을 만든 Production MLOps 프로젝트입니다.
+This project converted driver MAX capacity estimation from an experience-based manual process into an automated ML-driven production pipeline.
+
+By combining **LightGBM prediction**, **AWS Lambda automation**, **direct DB integration**, and **Google Sheets operational output**, the system improved SLA stability and supplied higher-quality input data to the downstream clustering system.
