@@ -1,0 +1,37 @@
+# Public example configuration. Copy this file to samconfig.toml and replace placeholders locally.
+version = 0.1
+
+[default.global.parameters]
+stack_name = "sam-ml-max-delivery-sample"
+region = "ap-northeast-2"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+[default.deploy.parameters]
+stack_name = "sam-ml-max-delivery-sample"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "sam-ml-max-delivery-sample"
+profile = "your-aws-profile"
+parameter_overrides = "AccountEnv=\"dev\""
+image_repositories = [
+  "MLMaxDeliveryFunction={account_id}.dkr.ecr.ap-northeast-2.amazonaws.com/sam-ml-max-delivery/mlmaxdeliveryfunction"
+]
+
+[default.package.parameters]
+resolve_s3 = true
+
+[default.sync.parameters]
+watch = true
+
+[default.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[default.local_start_lambda.parameters]
+warm_containers = "EAGER"
